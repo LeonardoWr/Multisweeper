@@ -177,8 +177,6 @@ private const int QUANTIDADE_MINAS = 40;
 
     private void desbloquearCampo(int[] campo, int quantidadeMinas)
     {
-        Debug.Log("coluna " + campo[0]);
-        Debug.Log("linha " + campo[1]);
         if(quantidadeMinas != 0)
         {
             textosCampos[campo[0], campo[1]].enabled = true;
