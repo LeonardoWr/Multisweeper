@@ -53,6 +53,12 @@ public class CampoMina : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, 
             anim.SetBool("Selecionado", false);
             gameManager.selecionarCampoMina(campo);
         }
+
+        if (selecionadoM)
+        {
+            anim.SetBool("Selecionado", false);
+            gameManager.removerCamposRedor(campo);
+        }
     }
     
     public void OnPointerEnter(PointerEventData pointerEventData)
@@ -73,6 +79,7 @@ public class CampoMina : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, 
         if(selecionadoM)
         {
             selecionadoM = false;
+            gameManager.deselecionarCamposRedor(campo);
         }
 
         hover = false;

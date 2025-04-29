@@ -15,6 +15,9 @@ public class GameManager : MonoBehaviour
         { 7, new Color32(44, 190, 74, 255)},
         { 8, new Color32(190, 44, 170, 255)}
     };
+    
+    static readonly int[] ix = { -1, -1, -1, 0, 0, 1, 1, 1 };
+    static readonly int[] iy = { -1, 0, 1, -1, 1, -1, 0, 1 };
 
     private const int QUANTIDADE_MINAS = 40;
 
@@ -22,6 +25,7 @@ public class GameManager : MonoBehaviour
     private bool[,] bandeiras = new bool[15, 18];
     private bool[,] camposDesbloqueados = new bool[15, 18];
     private GameObject[,] camposMinas = new GameObject[15, 18];
+    private int[,] contagemMinasRondando = new int[15, 18];
     private bool[,] minas = new bool[15, 18];
     private float tempoRestante = 600;
     private TMP_Text[,] textosCampos = new TMP_Text[15, 18];
@@ -136,10 +140,6 @@ public class GameManager : MonoBehaviour
     private void verificarMinasProximas(int[] campo)
     {
         int quantidadeMinas = 0;
-
-        int[] ix = { -1, -1, -1, 0, 0, 1, 1, 1 };
-        int[] iy = { -1, 0, 1, -1, 1, -1, 0, 1 };
-
         int coluna = campo[0];
         int linha = campo[1];
 
@@ -154,6 +154,7 @@ public class GameManager : MonoBehaviour
             }
         }
 
+        contagemMinasRondando[campo[0], campo[1]] = quantidadeMinas;
         desbloquearCampo(campo, quantidadeMinas);
 
         if (quantidadeMinas == 0)
@@ -210,8 +211,69 @@ public class GameManager : MonoBehaviour
 
     public void selecionarCamposRedor(int[] campo)
     {
-        int[] ix = { -1, -1, -1, 0, 0, 1, 1, 1 };
-        int[] iy = { -1, 0, 1, -1, 1, -1, 0, 1 };
+        int coluna = campo[0];
+        int linha = campo[1];
+
+        for (int i = 0; i < 8; i++)
+        {
+            int colunaVerificar = coluna + iy[i];
+            int linhaVerificar = linha + ix[i];
+
+            if (campoValidoSelecao(colunaVerificar, linhaVerificar))
+            {
+                camposMinas[colunaVerificar, linhaVerificar].GetComponent<Animator>().SetBool("Selecionado", true);
+            }
+        }
+    }
+
+    public void deselecionarCamposRedor(int[] campo)
+    {
+        int coluna = campo[0];
+        int linha = campo[1];
+
+        for (int i = 0; i < 8; i++)
+        {
+            int colunaVerificar = coluna + iy[i];
+            int linhaVerificar = linha + ix[i];
+
+            if (campoValidoSelecao(colunaVerificar, linhaVerificar))
+            {
+                camposMinas[colunaVerificar, linhaVerificar].GetComponent<Animator>().SetBool("Selecionado", false);
+            }
+        }
+    }
+
+    private bool campoValidoSelecao(int colunaVerificar, int linhaVerificar)
+    {
+        return (colunaVerificar >= 0) && (colunaVerificar < 15) && (linhaVerificar >= 0);
+    }
+
+    public void removerCamposRedor(int[] campo)
+    {
+        deselecionarCamposRedor(campo);
+
+        if (contagemMinasRondando[campo[0], campo[1]] > 0 && contarBandeirasProximas(campo) == contagemMinasRondando[campo[0], campo[1]])
+        {
+            int coluna = campo[0];
+            int linha = campo[1];
+
+            for (int i = 0; i < 8; i++)
+            {
+                int colunaVerificar = coluna + iy[i];
+                int linhaVerificar = linha + ix[i];
+
+                if (campoValido(colunaVerificar, linhaVerificar) && !bandeiras[colunaVerificar, linhaVerificar])
+                {
+                    int[] campoVerificar = { colunaVerificar, linhaVerificar };
+                    selecionarCampoMina(campoVerificar);
+                }
+            }
+        }
+    }
+
+    private int contarBandeirasProximas(int[] campo)
+    {
+        int quantidadeBandeiras = 0;
 
         int coluna = campo[0];
         int linha = campo[1];
@@ -221,10 +283,12 @@ public class GameManager : MonoBehaviour
             int colunaVerificar = coluna + iy[i];
             int linhaVerificar = linha + ix[i];
 
-            if (campoValido(colunaVerificar, linhaVerificar))
+            if (campoValido(colunaVerificar, linhaVerificar) && bandeiras[colunaVerificar, linhaVerificar])
             {
-                camposMinas[campo[0], campo[1]].GetComponent<Animator>().SetBool("Selecionado", true);
+                quantidadeBandeiras++;
             }
         }
+
+        return quantidadeBandeiras;
     }
 }
