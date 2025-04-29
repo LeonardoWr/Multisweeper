@@ -16,19 +16,22 @@ public class GameManager : MonoBehaviour
         { 8, new Color32(190, 44, 170, 255)}
     };
 
-private const int QUANTIDADE_MINAS = 40;
+    private const int QUANTIDADE_MINAS = 40;
 
-    private TMP_Text timer;
-    private float tempoRestante = 600;
-    private TMP_Text[,] textosCampos = new TMP_Text[15, 18];
-    private bool[,] minas = new bool[15, 18];
+    private int bandeiraRestantes;
+    private bool[,] bandeiras = new bool[15, 18];
     private bool[,] camposDesbloqueados = new bool[15, 18];
     private GameObject[,] camposMinas = new GameObject[15, 18];
+    private bool[,] minas = new bool[15, 18];
+    private float tempoRestante = 600;
+    private TMP_Text[,] textosCampos = new TMP_Text[15, 18];
+    private TMP_Text timer;
 
     void Start()
     {
         GameObject timerObject = GameObject.Find("Timer");
         timer = timerObject.GetComponent<TMP_Text>();
+        bandeiraRestantes = QUANTIDADE_MINAS;
         preencherTextosCampos();
         criarMinas();
         preencherComponentesCampos();
@@ -186,6 +189,42 @@ private const int QUANTIDADE_MINAS = 40;
         }
 
         camposDesbloqueados[campo[0], campo[1]] = true;
-        Destroy(camposMinas[campo[0], campo[1]]);
+        camposMinas[campo[0], campo[1]].GetComponent<Animator>().SetBool("Desabilitado", true);
+    }
+
+    public void trocarBandeiraCampo(int[] campo)
+    {
+        if (bandeiras[campo[0], campo[1]])
+        {
+            bandeiras[campo[0], campo[1]] = false;
+            camposMinas[campo[0], campo[1]].GetComponent<Animator>().SetBool("Bandeira", false);
+            bandeiraRestantes++;
+        }
+        else if (bandeiraRestantes > 0)
+        {
+            bandeiras[campo[0], campo[1]] = true;
+            camposMinas[campo[0], campo[1]].GetComponent<Animator>().SetBool("Bandeira", true);
+            bandeiraRestantes--;
+        }
+    }
+
+    public void selecionarCamposRedor(int[] campo)
+    {
+        int[] ix = { -1, -1, -1, 0, 0, 1, 1, 1 };
+        int[] iy = { -1, 0, 1, -1, 1, -1, 0, 1 };
+
+        int coluna = campo[0];
+        int linha = campo[1];
+
+        for (int i = 0; i < 8; i++)
+        {
+            int colunaVerificar = coluna + iy[i];
+            int linhaVerificar = linha + ix[i];
+
+            if (campoValido(colunaVerificar, linhaVerificar))
+            {
+                camposMinas[campo[0], campo[1]].GetComponent<Animator>().SetBool("Selecionado", true);
+            }
+        }
     }
 }

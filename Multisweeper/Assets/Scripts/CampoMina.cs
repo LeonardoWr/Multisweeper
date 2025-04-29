@@ -1,25 +1,95 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class CampoMina : MonoBehaviour, IPointerClickHandler
+public class CampoMina : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler
 {
-    [SerializeField]
-    private GameManager gameManager;
-    [SerializeField]
+    private Animator anim;
+    private bool bandeira;
     private int[] campo = new int[2];
+    private GameManager gameManager;
+    private bool hover;
+    private bool selecionado;
+    private bool selecionadoM;
 
-    public void OnPointerClick(PointerEventData pointerEventData)
+    void Start()
     {
-        gameManager.selecionarCampoMina(campo);
+        anim = gameObject.GetComponent<Animator>();
+    }
+
+    public void OnPointerDown(PointerEventData pointerEventData)
+    {
+        if (pointerEventData.button == PointerEventData.InputButton.Left)
+        {
+            anim.SetBool("Selecionado", false);
+            
+            if (!bandeira)
+            {
+                selecionado = true;
+            }
+        }
+        else if (pointerEventData.button == PointerEventData.InputButton.Middle)
+        {
+            anim.SetBool("Selecionado", false);
+            selecionadoM = true;
+
+            gameManager.selecionarCamposRedor(campo);
+        }
+        else if (pointerEventData.button == PointerEventData.InputButton.Right)
+        {
+            gameManager.trocarBandeiraCampo(campo);
+        }
+        
+    }
+    
+    public void OnPointerUp(PointerEventData pointerEventData)
+    {
+        if(hover)
+        {
+            anim.SetBool("Selecionado", true);
+        }
+
+        if (selecionado)
+        {
+            anim.SetBool("Selecionado", false);
+            gameManager.selecionarCampoMina(campo);
+        }
+    }
+    
+    public void OnPointerEnter(PointerEventData pointerEventData)
+    {
+        anim.SetBool("Selecionado", true);
+        hover = true;
+    }
+
+    public void OnPointerExit(PointerEventData pointerEventData)
+    {
+        anim.SetBool("Selecionado", false);
+
+        if(selecionado)
+        {
+            selecionado = false;
+        }
+
+        if(selecionadoM)
+        {
+            selecionadoM = false;
+        }
+
+        hover = false;
+    }
+
+    public void setBandeira(bool bandeira)
+    {
+        this.bandeira = bandeira;
+    }
+
+    public void setCampo(int[] campo)
+    {
+        this.campo = campo;
     }
 
     public void setGameManager(GameManager gameManager)
     {
         this.gameManager = gameManager;
-    }
-    
-    public void setCampo(int[] campo)
-    {
-        this.campo = campo;
     }
 }
