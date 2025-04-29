@@ -26,6 +26,8 @@ public class GameManager : MonoBehaviour
     private bool[,] camposDesbloqueados = new bool[15, 18];
     private GameObject[,] camposMinas = new GameObject[15, 18];
     private int[,] contagemMinasRondando = new int[15, 18];
+    private int quantidadeBlocosDescobertos;
+    private TMP_Text quantidadeBlocosDescobertosTxt;
     private bool[,] minas = new bool[15, 18];
     private float tempoRestante = 600;
     private TMP_Text[,] textosCampos = new TMP_Text[15, 18];
@@ -35,7 +37,12 @@ public class GameManager : MonoBehaviour
     {
         GameObject timerObject = GameObject.Find("Timer");
         timer = timerObject.GetComponent<TMP_Text>();
+        GameObject quantidadeBlocosDescobertosObject = GameObject.Find("TxtBlocoDescoberto");
+        quantidadeBlocosDescobertosTxt = quantidadeBlocosDescobertosObject.GetComponent<TMP_Text>();
+        quantidadeBlocosDescobertosTxt.text = "0";
+        timer = timerObject.GetComponent<TMP_Text>();
         bandeiraRestantes = QUANTIDADE_MINAS;
+        quantidadeBlocosDescobertos = 0;
         preencherTextosCampos();
         criarMinas();
         preencherComponentesCampos();
@@ -156,6 +163,8 @@ public class GameManager : MonoBehaviour
 
         contagemMinasRondando[campo[0], campo[1]] = quantidadeMinas;
         desbloquearCampo(campo, quantidadeMinas);
+        quantidadeBlocosDescobertos++;
+        quantidadeBlocosDescobertosTxt.text = quantidadeBlocosDescobertos.ToString();
 
         if (quantidadeMinas == 0)
         {
@@ -176,7 +185,7 @@ public class GameManager : MonoBehaviour
 
     private bool campoValido(int colunaVerificar, int linhaVerificar)
     {
-        return (colunaVerificar >= 0) && (colunaVerificar < 15) && (linhaVerificar >= 0) && (linhaVerificar < 18) && !camposDesbloqueados[colunaVerificar, linhaVerificar];
+        return campoValidoSelecao(colunaVerificar, linhaVerificar) && !camposDesbloqueados[colunaVerificar, linhaVerificar];
     }
 
     private void desbloquearCampo(int[] campo, int quantidadeMinas)
@@ -198,12 +207,14 @@ public class GameManager : MonoBehaviour
         if (bandeiras[campo[0], campo[1]])
         {
             bandeiras[campo[0], campo[1]] = false;
+            camposMinas[campo[0], campo[1]].GetComponent<CampoMina>().setBandeira(false);
             camposMinas[campo[0], campo[1]].GetComponent<Animator>().SetBool("Bandeira", false);
             bandeiraRestantes++;
         }
         else if (bandeiraRestantes > 0)
         {
             bandeiras[campo[0], campo[1]] = true;
+            camposMinas[campo[0], campo[1]].GetComponent<CampoMina>().setBandeira(true);
             camposMinas[campo[0], campo[1]].GetComponent<Animator>().SetBool("Bandeira", true);
             bandeiraRestantes--;
         }
@@ -245,7 +256,7 @@ public class GameManager : MonoBehaviour
 
     private bool campoValidoSelecao(int colunaVerificar, int linhaVerificar)
     {
-        return (colunaVerificar >= 0) && (colunaVerificar < 15) && (linhaVerificar >= 0);
+        return colunaVerificar >= 0 && colunaVerificar < 15 && linhaVerificar >= 0 && linhaVerificar < 18;
     }
 
     public void removerCamposRedor(int[] campo)
