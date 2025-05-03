@@ -28,6 +28,7 @@ public class GameManager : MonoBehaviour
     private int[,] contagemMinasRondando = new int[15, 18];
     private int quantidadeBlocosDescobertos;
     private TMP_Text quantidadeBlocosDescobertosTxt;
+    private TMP_Text quantidadeBandeirasRestantes;
     private bool[,] minas = new bool[15, 18];
     private float tempoRestante = 600;
     private TMP_Text[,] textosCampos = new TMP_Text[15, 18];
@@ -40,6 +41,9 @@ public class GameManager : MonoBehaviour
         GameObject quantidadeBlocosDescobertosObject = GameObject.Find("TxtBlocoDescoberto");
         quantidadeBlocosDescobertosTxt = quantidadeBlocosDescobertosObject.GetComponent<TMP_Text>();
         quantidadeBlocosDescobertosTxt.text = "0";
+        GameObject quantidadeBandeirasRestantesObject = GameObject.Find("TxtBandeirasRestantes");
+        quantidadeBandeirasRestantes = quantidadeBandeirasRestantesObject.GetComponent<TMP_Text>();
+        quantidadeBandeirasRestantes.text = QUANTIDADE_MINAS.ToString();
         timer = timerObject.GetComponent<TMP_Text>();
         bandeiraRestantes = QUANTIDADE_MINAS;
         quantidadeBlocosDescobertos = 0;
@@ -218,6 +222,7 @@ public class GameManager : MonoBehaviour
             camposMinas[campo[0], campo[1]].GetComponent<Animator>().SetBool("Bandeira", true);
             bandeiraRestantes--;
         }
+        quantidadeBandeirasRestantes.text = bandeiraRestantes.ToString();
     }
 
     public void selecionarCamposRedor(int[] campo)
