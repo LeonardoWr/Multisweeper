@@ -9449,7 +9449,7 @@ GameObject:
   - component: {fileID: 373728063}
   - component: {fileID: 373728062}
   m_Layer: 5
-  m_Name: Canvas
+  m_Name: UI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -62464,7 +62464,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -358.80002, y: 112}
-  m_SizeDelta: {x: 34.7007, y: 34.7007}
+  m_SizeDelta: {x: 36, y: 58}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2021069626
 MonoBehaviour:

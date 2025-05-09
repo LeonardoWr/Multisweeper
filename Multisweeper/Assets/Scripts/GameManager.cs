@@ -248,6 +248,7 @@ public class GameManager : MonoBehaviour
             camposMinas[campo[0], campo[1]].GetComponent<Animator>().SetBool("Bandeira", true);
             bandeiraRestantes--;
         }
+
         quantidadeBandeirasRestantes.text = bandeiraRestantes.ToString();
     }
 
