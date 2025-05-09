@@ -26,14 +26,18 @@ public class GameManager : MonoBehaviour
     private bool[,] camposDesbloqueados = new bool[15, 18];
     private GameObject[,] camposMinas = new GameObject[15, 18];
     private int[,] contagemMinasRondando = new int[15, 18];
+    private GameObject gameOverScreen;
     private int quantidadeBlocosDescobertos;
     private TMP_Text quantidadeBlocosDescobertosTxt;
     private TMP_Text quantidadeBandeirasRestantes;
     private bool[,] minas = new bool[15, 18];
+    private bool perdeu;
     private bool primeiroCampoDescoberto;
     private float tempoRestante = 600;
     private TMP_Text[,] textosCampos = new TMP_Text[15, 18];
     private TMP_Text timer;
+    private int vidas;
+    private Animator[] vidasAnim = new Animator[3];
 
     void Start()
     {
@@ -42,6 +46,8 @@ public class GameManager : MonoBehaviour
         GameObject quantidadeBlocosDescobertosObject = GameObject.Find("TxtBlocoDescoberto");
         quantidadeBlocosDescobertosTxt = quantidadeBlocosDescobertosObject.GetComponent<TMP_Text>();
         quantidadeBlocosDescobertosTxt.text = "0";
+        vidasAnim = GameObject.Find("Vidas").GetComponentsInChildren<Animator>();
+        gameOverScreen = GameObject.Find("GameOverScreen").transform.GetChild(0).gameObject;
         GameObject quantidadeBandeirasRestantesObject = GameObject.Find("TxtBandeirasRestantes");
         quantidadeBandeirasRestantes = quantidadeBandeirasRestantesObject.GetComponent<TMP_Text>();
         quantidadeBandeirasRestantes.text = QUANTIDADE_MINAS.ToString();
@@ -49,6 +55,7 @@ public class GameManager : MonoBehaviour
         bandeiraRestantes = QUANTIDADE_MINAS;
         quantidadeBlocosDescobertos = 0;
         primeiroCampoDescoberto = true;
+        vidas = 3;
         preencherTextosCampos();
         preencherComponentesCampos();
     }
@@ -114,7 +121,7 @@ public class GameManager : MonoBehaviour
 
     private void atualizarTempo()
     {
-        if (tempoRestante > 0)
+        if (tempoRestante > 0 && !perdeu)
         {
             tempoRestante -= Time.deltaTime;
             timer.text = Mathf.FloorToInt(tempoRestante + 1).ToString();
@@ -125,7 +132,15 @@ public class GameManager : MonoBehaviour
     {
         if (minas[campo[0], campo[1]])
         {
-            Debug.Log("PERDEU KKKKKKKKKKKKKK");
+            vidas--;
+
+            configurarEstadoAnimVidas();
+            
+            if(vidas == 0)
+            {
+                perdeu = true;
+                gameOverScreen.SetActive(true);
+            }
         } else
         {
             if (primeiroCampoDescoberto)
@@ -135,6 +150,32 @@ public class GameManager : MonoBehaviour
             }
 
             verificarMinasProximas(campo);
+        }
+    }
+
+    private void configurarEstadoAnimVidas()
+    {
+        switch (vidas) {
+            case 1:
+                vidasAnim[0].SetBool("Vazia", false);
+                vidasAnim[1].SetBool("Vazia", true);
+                vidasAnim[2].SetBool("Vazia", true);
+                break;
+            case 2:
+                vidasAnim[0].SetBool("Vazia", false);
+                vidasAnim[1].SetBool("Vazia", false);
+                vidasAnim[2].SetBool("Vazia", true);
+                break;
+            case 3:
+                vidasAnim[0].SetBool("Vazia", false);
+                vidasAnim[1].SetBool("Vazia", false);
+                vidasAnim[2].SetBool("Vazia", false);
+                break;
+            default:
+                vidasAnim[0].SetBool("Vazia", true);
+                vidasAnim[1].SetBool("Vazia", true);
+                vidasAnim[2].SetBool("Vazia", true);
+                break;
         }
     }
 
