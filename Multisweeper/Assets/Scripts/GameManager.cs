@@ -30,6 +30,7 @@ public class GameManager : MonoBehaviour
     private TMP_Text quantidadeBlocosDescobertosTxt;
     private TMP_Text quantidadeBandeirasRestantes;
     private bool[,] minas = new bool[15, 18];
+    private bool primeiroCampoDescoberto;
     private float tempoRestante = 600;
     private TMP_Text[,] textosCampos = new TMP_Text[15, 18];
     private TMP_Text timer;
@@ -47,8 +48,8 @@ public class GameManager : MonoBehaviour
         timer = timerObject.GetComponent<TMP_Text>();
         bandeiraRestantes = QUANTIDADE_MINAS;
         quantidadeBlocosDescobertos = 0;
+        primeiroCampoDescoberto = true;
         preencherTextosCampos();
-        criarMinas();
         preencherComponentesCampos();
     }
 
@@ -71,23 +72,6 @@ public class GameManager : MonoBehaviour
                 coluna = 0;
                 linha++;
             }
-        }
-    }
-
-    private void criarMinas()
-    {
-        for(int i = 0; i < QUANTIDADE_MINAS; i++)
-        {
-            int coluna = Random.Range(0, 14);
-            int linha = Random.Range(0, 18);
-            
-            while(minas[coluna, linha])
-            {
-                coluna = Random.Range(0, 14);
-                linha = Random.Range(0, 18);
-            }
-
-            minas[coluna, linha] = true;
         }
     }
 
@@ -144,8 +128,50 @@ public class GameManager : MonoBehaviour
             Debug.Log("PERDEU KKKKKKKKKKKKKK");
         } else
         {
+            if (primeiroCampoDescoberto)
+            {
+                criarMinas(campo);
+                primeiroCampoDescoberto = false;
+            }
+
             verificarMinasProximas(campo);
         }
+    }
+
+    private void criarMinas(int[] campo)
+    {
+        for (int i = 0; i < QUANTIDADE_MINAS; i++)
+        {
+            int coluna = Random.Range(0, 14);
+            int linha = Random.Range(0, 18);
+
+            while (minas[coluna, linha] || (coluna == campo[0] && linha == campo[1]) || verificarCliqueCamposRedor(coluna, linha, campo))
+            {
+                coluna = Random.Range(0, 14);
+                linha = Random.Range(0, 18);
+            }
+
+            minas[coluna, linha] = true;
+        }
+    }
+
+    private bool verificarCliqueCamposRedor(int coluna, int linha, int[] campo)
+    {
+        int colunaCampo = campo[0];
+        int linhaCampo = campo[1];
+
+        for (int i = 0; i < 8; i++)
+        {
+            int colunaVerificar = colunaCampo + iy[i];
+            int linhaVerificar = linhaCampo + ix[i];
+
+            if (campoValido(colunaVerificar, linhaVerificar) && coluna == colunaVerificar && linha == linhaVerificar)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void verificarMinasProximas(int[] campo)
@@ -261,7 +287,7 @@ public class GameManager : MonoBehaviour
 
     private bool campoValidoSelecao(int colunaVerificar, int linhaVerificar)
     {
-        return colunaVerificar >= 0 && colunaVerificar < 15 && linhaVerificar >= 0 && linhaVerificar < 18;
+        return colunaVerificar >= 0 && colunaVerificar < 15 && linhaVerificar >= 0 && linhaVerificar < 18 && !camposDesbloqueados[colunaVerificar, linhaVerificar];
     }
 
     public void removerCamposRedor(int[] campo)
