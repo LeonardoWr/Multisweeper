@@ -48,16 +48,25 @@ public class CampoMina : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, 
             anim.SetBool("Selecionado", true);
         }
 
-        if (selecionado)
+        if (pointerEventData.button == PointerEventData.InputButton.Left)
         {
-            anim.SetBool("Selecionado", false);
-            gameManager.selecionarCampoMina(campo);
-        }
+            if (selecionado)
+            {
+                anim.SetBool("Selecionado", false);
 
-        if (selecionadoM)
+                if(!bandeira)
+                {
+                    gameManager.selecionarCampoMina(campo);
+                }
+            }
+        }
+        else if (pointerEventData.button == PointerEventData.InputButton.Middle)
         {
-            anim.SetBool("Selecionado", false);
-            gameManager.removerCamposRedor(campo);
+            if (selecionadoM)
+            {
+                anim.SetBool("Selecionado", false);
+                gameManager.removerCamposRedor(campo);
+            }
         }
     }
     

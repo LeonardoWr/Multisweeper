@@ -20,17 +20,19 @@ public class GameManager : MonoBehaviour
     static readonly int[] iy = { -1, 0, 1, -1, 1, -1, 0, 1 };
 
     private const int QUANTIDADE_MINAS = 40;
+    private const int QUANTIDADE_CAMPOS = 270;
+    private const int QUANTIDADE_CAMPOS_NAO_MINAS = QUANTIDADE_CAMPOS - QUANTIDADE_MINAS;
 
     private int bandeiraRestantes;
-    private bool[,] bandeiras = new bool[15, 18];
-    private bool[,] camposDesbloqueados = new bool[15, 18];
+    private bool[,] bandeiras;
+    private bool[,] camposDesbloqueados;
     private GameObject[,] camposMinas = new GameObject[15, 18];
-    private int[,] contagemMinasRondando = new int[15, 18];
+    private int[,] contagemMinasRondando;
     private GameObject gameOverScreen;
     private int quantidadeBlocosDescobertos;
     private TMP_Text quantidadeBlocosDescobertosTxt;
     private TMP_Text quantidadeBandeirasRestantes;
-    private bool[,] minas = new bool[15, 18];
+    private bool[,] minas;
     private bool perdeu;
     private bool primeiroCampoDescoberto;
     private float tempoRestante = 600;
@@ -46,18 +48,26 @@ public class GameManager : MonoBehaviour
         GameObject quantidadeBlocosDescobertosObject = GameObject.Find("TxtBlocoDescoberto");
         quantidadeBlocosDescobertosTxt = quantidadeBlocosDescobertosObject.GetComponent<TMP_Text>();
         quantidadeBlocosDescobertosTxt.text = "0";
+        quantidadeBlocosDescobertos = 0;
         vidasAnim = GameObject.Find("Vidas").GetComponentsInChildren<Animator>();
         gameOverScreen = GameObject.Find("GameOverScreen").transform.GetChild(0).gameObject;
+        vidas = 3;
         GameObject quantidadeBandeirasRestantesObject = GameObject.Find("TxtBandeirasRestantes");
         quantidadeBandeirasRestantes = quantidadeBandeirasRestantesObject.GetComponent<TMP_Text>();
-        quantidadeBandeirasRestantes.text = QUANTIDADE_MINAS.ToString();
-        timer = timerObject.GetComponent<TMP_Text>();
-        bandeiraRestantes = QUANTIDADE_MINAS;
-        quantidadeBlocosDescobertos = 0;
-        primeiroCampoDescoberto = true;
-        vidas = 3;
         preencherTextosCampos();
         preencherComponentesCampos();
+        inicializacaoCampo();
+    }
+
+    private void inicializacaoCampo()
+    {
+        quantidadeBandeirasRestantes.text = QUANTIDADE_MINAS.ToString();
+        bandeiraRestantes = QUANTIDADE_MINAS;
+        primeiroCampoDescoberto = true;
+        bandeiras = new bool[15, 18];
+        camposDesbloqueados = new bool[15, 18];
+        contagemMinasRondando = new int[15, 18];
+        minas = new bool[15, 18];
     }
 
     private void preencherTextosCampos()
@@ -130,26 +140,30 @@ public class GameManager : MonoBehaviour
 
     public void selecionarCampoMina(int[] campo)
     {
-        if (minas[campo[0], campo[1]])
+        if (!camposDesbloqueados[campo[0], campo[1]])
         {
-            vidas--;
-
-            configurarEstadoAnimVidas();
-            
-            if(vidas == 0)
+            if (minas[campo[0], campo[1]])
             {
-                perdeu = true;
-                gameOverScreen.SetActive(true);
-            }
-        } else
-        {
-            if (primeiroCampoDescoberto)
-            {
-                criarMinas(campo);
-                primeiroCampoDescoberto = false;
-            }
+                vidas--;
 
-            verificarMinasProximas(campo);
+                configurarEstadoAnimVidas();
+
+                if (vidas == 0)
+                {
+                    perdeu = true;
+                    gameOverScreen.SetActive(true);
+                }
+            }
+            else
+            {
+                if (primeiroCampoDescoberto)
+                {
+                    criarMinas(campo);
+                    primeiroCampoDescoberto = false;
+                }
+
+                verificarMinasProximas(campo);
+            }
         }
     }
 
@@ -252,6 +266,8 @@ public class GameManager : MonoBehaviour
                 }
             }
         }
+
+        verificarReinicioCampo();
     }
 
     private bool campoValido(int colunaVerificar, int linhaVerificar)
@@ -273,24 +289,58 @@ public class GameManager : MonoBehaviour
         camposMinas[campo[0], campo[1]].GetComponent<Animator>().SetBool("Desabilitado", true);
     }
 
+    private void verificarReinicioCampo()
+    {
+        if(quantidadeBlocosDescobertos % QUANTIDADE_CAMPOS_NAO_MINAS == 0)
+        {
+            inicializacaoCampo();
+            reiniciarEstadoCampos();
+            reiniciarTextosCampos();
+        }
+    }
+
+    private void reiniciarEstadoCampos()
+    {
+        foreach(GameObject campo in camposMinas)
+        {
+            campo.GetComponent<CampoMina>().setBandeira(false);
+            campo.GetComponent<Animator>().SetBool("Desabilitado", false);
+            campo.GetComponent<Animator>().SetBool("Selecionado", false);
+            campo.GetComponent<Animator>().SetBool("Bandeira", false);
+        }
+    }
+
+    private void reiniciarTextosCampos()
+    {
+        foreach(TMP_Text textoCampo in textosCampos)
+        {
+            textoCampo.color = new Color32(255, 255, 255, 255);
+            textoCampo.text = "";
+            textoCampo.enabled = false;
+        }
+    }
+
     public void trocarBandeiraCampo(int[] campo)
     {
-        if (bandeiras[campo[0], campo[1]])
+        if(!camposDesbloqueados[campo[0], campo[1]])
         {
-            bandeiras[campo[0], campo[1]] = false;
-            camposMinas[campo[0], campo[1]].GetComponent<CampoMina>().setBandeira(false);
-            camposMinas[campo[0], campo[1]].GetComponent<Animator>().SetBool("Bandeira", false);
-            bandeiraRestantes++;
-        }
-        else if (bandeiraRestantes > 0)
-        {
-            bandeiras[campo[0], campo[1]] = true;
-            camposMinas[campo[0], campo[1]].GetComponent<CampoMina>().setBandeira(true);
-            camposMinas[campo[0], campo[1]].GetComponent<Animator>().SetBool("Bandeira", true);
-            bandeiraRestantes--;
-        }
+            if (bandeiras[campo[0], campo[1]])
+            {
+                bandeiras[campo[0], campo[1]] = false;
+                camposMinas[campo[0], campo[1]].GetComponent<CampoMina>().setBandeira(false);
+                camposMinas[campo[0], campo[1]].GetComponent<Animator>().SetBool("Bandeira", false);
+                bandeiraRestantes++;
+            }
+            else if (bandeiraRestantes > 0)
+            {
+                bandeiras[campo[0], campo[1]] = true;
+                camposMinas[campo[0], campo[1]].GetComponent<CampoMina>().setBandeira(true);
+                camposMinas[campo[0], campo[1]].GetComponent<Animator>().SetBool("Bandeira", true);
+                bandeiraRestantes--;
+            }
 
-        quantidadeBandeirasRestantes.text = bandeiraRestantes.ToString();
+            quantidadeBandeirasRestantes.text = bandeiraRestantes.ToString();
+        }
     }
 
     public void selecionarCamposRedor(int[] campo)
