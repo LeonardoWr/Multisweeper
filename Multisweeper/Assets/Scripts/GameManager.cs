@@ -37,6 +37,7 @@ public class GameManager : MonoBehaviour
     private bool primeiroCampoDescoberto;
     private float tempoRestante = 600;
     private TMP_Text[,] textosCampos = new TMP_Text[15, 18];
+    private GameObject timeOverScreen;
     private TMP_Text timer;
     private int vidas;
     private Animator[] vidasAnim = new Animator[3];
@@ -51,6 +52,7 @@ public class GameManager : MonoBehaviour
         quantidadeBlocosDescobertos = 0;
         vidasAnim = GameObject.Find("Vidas").GetComponentsInChildren<Animator>();
         gameOverScreen = GameObject.Find("GameOverScreen").transform.GetChild(0).gameObject;
+        timeOverScreen = GameObject.Find("GameOverScreen").transform.GetChild(1).gameObject;
         vidas = 3;
         GameObject quantidadeBandeirasRestantesObject = GameObject.Find("TxtBandeirasRestantes");
         quantidadeBandeirasRestantes = quantidadeBandeirasRestantesObject.GetComponent<TMP_Text>();
@@ -135,6 +137,10 @@ public class GameManager : MonoBehaviour
         {
             tempoRestante -= Time.deltaTime;
             timer.text = Mathf.FloorToInt(tempoRestante + 1).ToString();
+        }
+        else
+        {
+            timeOverScreen.SetActive(true);
         }
     }
 
