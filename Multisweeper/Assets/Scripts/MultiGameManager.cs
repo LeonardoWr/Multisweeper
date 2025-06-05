@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -43,7 +42,6 @@ public class MultiGameManager : NetworkBehaviour
     private float tempoRestante = 600;
     private TMP_Text[,] textosCampos = new TMP_Text[15, 18];
     private GameObject timeOverScreen;
-    private TMP_Text timer;
     private int vidas;
     private Animator[] vidasAnim = new Animator[3];
 
@@ -51,8 +49,6 @@ public class MultiGameManager : NetworkBehaviour
     {
         if(IsLocalPlayer)
         {
-            GameObject timerObject = GameObject.Find("Timer");
-            timer = timerObject.GetComponent<TMP_Text>();
             GameObject quantidadeBlocosDescobertosObject = GameObject.Find("TxtBlocoDescoberto");
             quantidadeBlocosDescobertosTxt = quantidadeBlocosDescobertosObject.GetComponent<TMP_Text>();
             quantidadeBlocosDescobertosTxt.text = "0";
@@ -155,6 +151,18 @@ public class MultiGameManager : NetworkBehaviour
         }
     }
 
+    [ClientRpc]
+    public void inicializarJogoClientRpc()
+    {
+        GameObject menuConexao = GameObject.Find("MenuConexao");
+        iniciou = true;
+
+        if (menuConexao != null)
+        {
+            GameObject.Find("MenuConexao").SetActive(false);
+        }
+    }
+
     void Update()
     {
         if (IsServer && iniciou)
@@ -168,7 +176,6 @@ public class MultiGameManager : NetworkBehaviour
         if (tempoRestante > 0 && !perdeu)
         {
             tempoRestante -= Time.deltaTime;
-            timer.text = Mathf.FloorToInt(tempoRestante + 1).ToString();
             atualizarTempoClientRpc(tempoRestante);
         }
         else
@@ -213,7 +220,7 @@ public class MultiGameManager : NetworkBehaviour
                     verificarMinasProximas(campo);
                 }
 
-                atualizarGraficosCampoAdversarioServerRpc(Serialize(camposDesbloqueados), Serialize(contagemMinasRondando), quantidadeBlocosDescobertos, vidas);
+                atualizarGraficosCampoAdversarioClientRpc(Serialize(camposDesbloqueados), Serialize(contagemMinasRondando), quantidadeBlocosDescobertos, vidas);
             }
         }
     }
@@ -464,7 +471,7 @@ public class MultiGameManager : NetworkBehaviour
                 }
             }
 
-            atualizarGraficosCampoAdversarioServerRpc(Serialize(camposDesbloqueados), Serialize(contagemMinasRondando), quantidadeBlocosDescobertos, vidas);
+            atualizarGraficosCampoAdversarioClientRpc(Serialize(camposDesbloqueados), Serialize(contagemMinasRondando), quantidadeBlocosDescobertos, vidas);
         }
     }
 
@@ -488,25 +495,11 @@ public class MultiGameManager : NetworkBehaviour
 
         return quantidadeBandeiras;
     }
-       
-    [ServerRpc]
-    private void atualizarGraficosCampoAdversarioServerRpc(byte[] camposDesbloqueados, byte[] contagemMinasRondando, int quantidadeBlocosDescobertos, int vidas)
-    {
-        if(!IsLocalPlayer)
-        {
-            atualizarCamposAdversario(camposDesbloqueados);
-            atualizarTextosAdversario(contagemMinasRondando);
-            atualizarQuantidadeBlocosDescobertosAdversario(quantidadeBlocosDescobertos);
-            atualizarVidasAdversario(vidas);
-        }
-
-        atualizarGraficosCampoAdversarioClientRpc(camposDesbloqueados, contagemMinasRondando, quantidadeBlocosDescobertos, vidas);
-    }
 
     [ClientRpc]
     private void atualizarGraficosCampoAdversarioClientRpc(byte[] camposDesbloqueados, byte[] contagemMinasRondando, int quantidadeBlocosDescobertos, int vidas)
     {
-        if (!IsLocalPlayer && !IsServer)
+        if (!IsLocalPlayer)
         {
             atualizarCamposAdversario(camposDesbloqueados);
             atualizarTextosAdversario(contagemMinasRondando);
@@ -613,29 +606,27 @@ public class MultiGameManager : NetworkBehaviour
 
     private static byte[] Serialize(int[,] toSerialize)
     {
-
         BinaryFormatter bf = new BinaryFormatter();
         MemoryStream ms = new MemoryStream();
         bf.Serialize(ms, toSerialize);
-        return ms.ToArray();
 
+        return ms.ToArray();
     }
 
     private static byte[] Serialize(bool[,] toSerialize)
     {
-
         BinaryFormatter bf = new BinaryFormatter();
         MemoryStream ms = new MemoryStream();
         bf.Serialize(ms, toSerialize);
+        
         return ms.ToArray();
-
     }
 
-    public static T Deserialize<T>(byte[] toDeserialize)
+    private static T Deserialize<T>(byte[] toDeserialize)
     {
-
         BinaryFormatter bf = new BinaryFormatter();
         MemoryStream ms = new MemoryStream(toDeserialize);
+
         return (T)bf.Deserialize(ms);
     }
 }
