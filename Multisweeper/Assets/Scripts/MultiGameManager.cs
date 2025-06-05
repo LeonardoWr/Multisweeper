@@ -31,9 +31,9 @@ public class MultiGameManager : NetworkBehaviour
     private bool[,] camposDesbloqueados;
     private GameObject[,] camposMinas = new GameObject[15, 18];
     private int[,] contagemMinasRondando;
-    private GameObject gameOverScreen;
     private bool iniciou;
     private int quantidadeBlocosDescobertos;
+    private int quantidadeBlocosDescobertosAdv;
     private TMP_Text quantidadeBlocosDescobertosTxt;
     private TMP_Text quantidadeBandeirasRestantes;
     private bool[,] minas;
@@ -41,7 +41,6 @@ public class MultiGameManager : NetworkBehaviour
     private bool primeiroCampoDescoberto;
     private float tempoRestante = 600;
     private TMP_Text[,] textosCampos = new TMP_Text[15, 18];
-    private GameObject timeOverScreen;
     private int vidas;
     private Animator[] vidasAnim = new Animator[3];
 
@@ -54,8 +53,6 @@ public class MultiGameManager : NetworkBehaviour
             quantidadeBlocosDescobertosTxt.text = "0";
             quantidadeBlocosDescobertos = 0;
             vidasAnim = GameObject.Find("Vidas").GetComponentsInChildren<Animator>();
-            gameOverScreen = GameObject.Find("GameOverScreen").transform.GetChild(0).gameObject;
-            timeOverScreen = GameObject.Find("GameOverScreen").transform.GetChild(1).gameObject;
             vidas = 3;
             GameObject quantidadeBandeirasRestantesObject = GameObject.Find("TxtBandeirasRestantes");
             quantidadeBandeirasRestantes = quantidadeBandeirasRestantesObject.GetComponent<TMP_Text>();
@@ -178,9 +175,9 @@ public class MultiGameManager : NetworkBehaviour
             tempoRestante -= Time.deltaTime;
             atualizarTempoClientRpc(tempoRestante);
         }
-        else
+        else if(vidas != 0)
         {
-            timeOverScreen.SetActive(true);
+            mostrarTelaFinalTempoClientRpc();
         }
     }
 
@@ -206,7 +203,7 @@ public class MultiGameManager : NetworkBehaviour
                     if (vidas == 0)
                     {
                         perdeu = true;
-                        gameOverScreen.SetActive(true);
+                        mostrarTelaFinalVidaClientRpc();
                     }
                 }
                 else
@@ -220,7 +217,7 @@ public class MultiGameManager : NetworkBehaviour
                     verificarMinasProximas(campo);
                 }
 
-                atualizarGraficosCampoAdversarioClientRpc(Serialize(camposDesbloqueados), Serialize(contagemMinasRondando), quantidadeBlocosDescobertos, vidas);
+                atualizarGraficosCampoAdversarioServerRpc(Serialize(camposDesbloqueados), Serialize(contagemMinasRondando), quantidadeBlocosDescobertos, vidas);
             }
         }
     }
@@ -471,7 +468,7 @@ public class MultiGameManager : NetworkBehaviour
                 }
             }
 
-            atualizarGraficosCampoAdversarioClientRpc(Serialize(camposDesbloqueados), Serialize(contagemMinasRondando), quantidadeBlocosDescobertos, vidas);
+            atualizarGraficosCampoAdversarioServerRpc(Serialize(camposDesbloqueados), Serialize(contagemMinasRondando), quantidadeBlocosDescobertos, vidas);
         }
     }
 
@@ -496,10 +493,24 @@ public class MultiGameManager : NetworkBehaviour
         return quantidadeBandeiras;
     }
 
+    [ServerRpc]
+    private void atualizarGraficosCampoAdversarioServerRpc(byte[] camposDesbloqueados, byte[] contagemMinasRondando, int quantidadeBlocosDescobertos, int vidas)
+    {
+        if (!IsLocalPlayer)
+        {
+            atualizarCamposAdversario(camposDesbloqueados);
+            atualizarTextosAdversario(contagemMinasRondando);
+            atualizarQuantidadeBlocosDescobertosAdversario(quantidadeBlocosDescobertos);
+            atualizarVidasAdversario(vidas);
+        }
+
+        atualizarGraficosCampoAdversarioClientRpc(camposDesbloqueados, contagemMinasRondando, quantidadeBlocosDescobertos, vidas);
+    }
+
     [ClientRpc]
     private void atualizarGraficosCampoAdversarioClientRpc(byte[] camposDesbloqueados, byte[] contagemMinasRondando, int quantidadeBlocosDescobertos, int vidas)
     {
-        if (!IsLocalPlayer)
+        if (!IsLocalPlayer && !IsServer)
         {
             atualizarCamposAdversario(camposDesbloqueados);
             atualizarTextosAdversario(contagemMinasRondando);
@@ -574,7 +585,10 @@ public class MultiGameManager : NetworkBehaviour
     {
         TMP_Text quantidadeBlocosDescobertosAdvTxt = GameObject.Find("TxtBlocoDescobertoAdv").GetComponent<TMP_Text>();
         quantidadeBlocosDescobertosAdvTxt.text = quantidadeBlocosDescobertos.ToString();
+
+        quantidadeBlocosDescobertosAdv = quantidadeBlocosDescobertos;
     }
+
     private void atualizarVidasAdversario(int vidas)
     {
         Animator[] vidasAdvAnim = GameObject.Find("VidasAdv").GetComponentsInChildren<Animator>();
@@ -602,6 +616,49 @@ public class MultiGameManager : NetworkBehaviour
                 vidasAdvAnim[2].SetBool("Vazia", true);
                 break;
         }
+    }
+
+    [ClientRpc]
+    private void mostrarTelaFinalTempoClientRpc()
+    {
+        GameObject gameOverScreen = GameObject.Find("GameOverScreen").transform.GetChild(0).gameObject;
+
+        gameOverScreen.SetActive(true);
+
+        if(quantidadeBlocosDescobertos > quantidadeBlocosDescobertosAdv)
+        {
+            GameObject.Find("TxtGameOver").GetComponent<TMP_Text>().text = "Você Ganhou!";
+        }
+        else if(quantidadeBlocosDescobertos < quantidadeBlocosDescobertosAdv)
+        {
+            GameObject.Find("TxtGameOver").GetComponent<TMP_Text>().text = "Você Perdeu!";
+        }
+        else
+        {
+            GameObject.Find("TxtGameOver").GetComponent<TMP_Text>().text = "Vocês Empataram!";
+        }
+
+        NetworkManager.Singleton.Shutdown();
+    }
+
+    [ClientRpc]
+    private void mostrarTelaFinalVidaClientRpc()
+    {
+        GameObject gameOverScreen = GameObject.Find("GameOverScreen").transform.GetChild(0).gameObject;
+        gameOverScreen.SetActive(true);
+
+        perdeu = true;
+
+        if (!IsLocalPlayer)
+        {
+            GameObject.Find("TxtGameOver").GetComponent<TMP_Text>().text = "Você Ganhou!";
+        }
+        else
+        {
+            GameObject.Find("TxtGameOver").GetComponent<TMP_Text>().text = "Você Perdeu!";
+        }
+        
+        NetworkManager.Singleton.Shutdown();
     }
 
     private static byte[] Serialize(int[,] toSerialize)

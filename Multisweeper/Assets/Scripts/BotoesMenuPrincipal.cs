@@ -6,11 +6,14 @@ public class BotoesMenuPrincipal : MonoBehaviour
 {
     public void iniciarJogo()
     {
-        GameObject[] gameManagers = GameObject.FindGameObjectsWithTag("GameManager");
-
-        foreach(GameObject gameManager in gameManagers)
+        if (NetworkManager.Singleton.ConnectedClients.Count == 2)
         {
-            gameManager.GetComponent<MultiGameManager>().inicializarJogoClientRpc();
+            GameObject[] gameManagers = GameObject.FindGameObjectsWithTag("GameManager");
+
+            foreach (GameObject gameManager in gameManagers)
+            {
+                gameManager.GetComponent<MultiGameManager>().inicializarJogoClientRpc();
+            }
         }
     }
 
@@ -36,10 +39,11 @@ public class BotoesMenuPrincipal : MonoBehaviour
 
     public void hostJogo()
     {
-        NetworkManager.Singleton.StartHost();
-
-        GameObject.Find("Hostear").SetActive(false);
-        GameObject.Find("Conectar").SetActive(false);
+        if (NetworkManager.Singleton.StartHost())
+        {
+            GameObject.Find("Hostear").SetActive(false);
+            GameObject.Find("Conectar").SetActive(false);
+        }
     }
 
     public void clientJogo()
